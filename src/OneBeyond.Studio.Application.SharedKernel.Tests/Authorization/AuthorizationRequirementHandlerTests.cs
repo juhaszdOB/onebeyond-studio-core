@@ -27,16 +27,16 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command = new TestableCommands.Command1();
 
-            await mediator.CommandAsync<TestableCommands.Command1, bool>(command);
+            await mediator.Send(command);
 
-            Assert.AreEqual(2, testableContainer.Count);
+            Assert.HasCount(2, testableContainer);
             // Auth handler is executed first
             Assert.AreEqual(
                 typeof(TestableAuthorizationRequirementHandlers.Requirement2Handler<TestableCommands.Command1>).FullName,
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command1>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -52,16 +52,16 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command2 = new TestableCommands.Command2();
 
-            await mediator.CommandAsync<TestableCommands.Command2, bool>(command2);
+            await mediator.Send(command2);
 
-            Assert.AreEqual(2, testableContainer.Count);
+            Assert.HasCount(2, testableContainer);
             // Appropriate (based on the command interface) auth handler is executed first
             Assert.AreEqual(
                 typeof(TestableAuthorizationRequirementHandlers.Requirement2ViaSomething1Handler<TestableCommands.Command2>).FullName,
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command2>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
 
@@ -73,16 +73,16 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command3 = new TestableCommands.Command3();
 
-            await mediator.CommandAsync<TestableCommands.Command3, bool>(command3);
+            await mediator.Send(command3);
 
-            Assert.AreEqual(2, testableContainer.Count);
+            Assert.HasCount(2, testableContainer);
             // Appropriate (based on the command interface) auth handler is executed first
             Assert.AreEqual(
                 typeof(TestableAuthorizationRequirementHandlers.Requirement2ViaSomething2Handler<TestableCommands.Command3>).FullName,
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command3>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -98,9 +98,9 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command4 = new TestableCommands.Command4();
 
-            await mediator.CommandAsync<TestableCommands.Command4, bool>(command4);
+            await mediator.Send(command4);
 
-            Assert.AreEqual(3, testableContainer.Count);
+            Assert.HasCount(3, testableContainer);
             // First requirement handler is executed and fails
             Assert.AreEqual(
                 $"{typeof(TestableAuthorizationRequirementHandlers.Requirement1Handler<TestableCommands.Command4>).FullName}: {new TestableAuthorizationRequirements.Requirement1(true, 42, "Forty two")} - Failure",
@@ -111,7 +111,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command4>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -127,9 +127,9 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command5 = new TestableCommands.Command5();
 
-            await mediator.CommandAsync<TestableCommands.Command5, bool>(command5);
+            await mediator.Send(command5);
 
-            Assert.AreEqual(2, testableContainer.Count);
+            Assert.HasCount(2, testableContainer);
             // First requirement handler is executed and succeeds
             Assert.AreEqual(
                 $"{typeof(TestableAuthorizationRequirementHandlers.Requirement2Handler<TestableCommands.Command5>).FullName}",
@@ -137,7 +137,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
             // Second requirement handler is not executed
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command5>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -155,12 +155,12 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             try
             {
-                await mediator.CommandAsync<TestableCommands.Command9, bool>(command9);
+                await mediator.Send(command9);
                 Assert.Fail();
             }
             catch (AuthorizationPolicyFailedException)
             {
-                Assert.AreEqual(2, testableContainer.Count);
+                Assert.HasCount(2, testableContainer);
                 // First requirement handler is executed and fails
                 Assert.AreEqual(
                     $"{typeof(TestableAuthorizationRequirementHandlers.Requirement1Handler<TestableCommands.Command9>).FullName}: {new TestableAuthorizationRequirements.Requirement1(true, 41, "Forty one")} - Failure",
@@ -185,9 +185,9 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             var command6 = new TestableCommands.Command6();
 
-            await mediator.CommandAsync<TestableCommands.Command6, bool>(command6);
+            await mediator.Send(command6);
 
-            Assert.AreEqual(3, testableContainer.Count);
+            Assert.HasCount(3, testableContainer);
             // First requirement handler is executed and succeeds
             Assert.AreEqual(
                 $"{typeof(TestableAuthorizationRequirementHandlers.Requirement2Handler<TestableCommands.Command6>).FullName}",
@@ -198,7 +198,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command6>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -216,12 +216,12 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             try
             {
-                await mediator.CommandAsync<TestableCommands.Command7, bool>(command7);
+                await mediator.Send(command7);
                 Assert.Fail();
             }
             catch (AuthorizationPolicyFailedException)
             {
-                Assert.AreEqual(1, testableContainer.Count);
+                Assert.HasCount(1, testableContainer);
                 // First requirement handler is executed and fails
                 Assert.AreEqual(
                     $"{typeof(TestableAuthorizationRequirementHandlers.Requirement3Handler<TestableCommands.Command7>).FullName}: {new TestableAuthorizationRequirements.Requirement3(true)} - Failure",
@@ -245,12 +245,12 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             try
             {
-                await mediator.CommandAsync<TestableCommands.Command8, bool>(command8);
+                await mediator.Send(command8);
                 Assert.Fail();
             }
             catch (AuthorizationPolicyFailedException)
             {
-                Assert.AreEqual(2, testableContainer.Count);
+                Assert.HasCount(2, testableContainer);
                 // First requirement handler is executed and succeeds
                 Assert.AreEqual(
                     $"{typeof(TestableAuthorizationRequirementHandlers.Requirement1Handler<TestableCommands.Command8>).FullName}: {new TestableAuthorizationRequirements.Requirement1(false, 45, "Forty five")} - Success",
@@ -276,7 +276,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
             try
             {
-                await mediator.CommandAsync<TestableCommands.Command10, bool>(command10);
+                await mediator.Send(command10);
             }
             catch (AuthorizationPolicyMissingException exception)
             {
@@ -304,7 +304,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
 
         containerBuilder.RegisterGeneric(typeof(TestableCommandHandlers.GenericCommandHandler<>))
             .AsImplementedInterfaces()
-            .InstancePerLifetimeScope();        
+            .InstancePerLifetimeScope();
 
         containerBuilder.AddAuthorizationRequirementHandlers(
             new SharedKernel.Authorization.AuthorizationOptions

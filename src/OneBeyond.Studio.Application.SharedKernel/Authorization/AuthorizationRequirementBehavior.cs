@@ -19,7 +19,7 @@ namespace OneBeyond.Studio.Application.SharedKernel.Authorization;
 public class AuthorizationRequirementBehavior<TRequest, TResponse>
     : AuthorizationRequirementBehavior
     , IMediatorPipelineBehaviour<TRequest, TResponse>
-    where TRequest : IRequest
+    where TRequest : class, IBaseRequest
 {
     private readonly ILifetimeScope _container;
     private readonly AuthorizationOptions _authorizationOptions;
@@ -87,9 +87,6 @@ public class AuthorizationRequirementBehavior<TRequest, TResponse>
                         requirementType.Key,
                         (_) =>
                         {
-                            var type1 = typeof(TRequest);
-                            var type2 = typeof(TResponse);
-                            var type3 = requirementType.Key;
                             var requirementHandlerWrapperType = typeof(AuthorizationRequirementHandler<>)
                                 .MakeGenericType(typeof(TRequest), typeof(TResponse), requirementType.Key);
                             return (AuthorizationRequirementHandler)Activator.CreateInstance(
@@ -145,8 +142,30 @@ public class AuthorizationRequirementBehavior<TRequest, TResponse>
             TRequest request,
             CancellationToken cancellationToken)
         {
-            return ((IAuthorizationRequirementHandler<TRequirement, TRequest>)requirementHandler)
-                .HandleAsync((TRequirement)requirement, request, cancellationToken);
+            var handlerType = requirementHandler.GetType();
+
+            var iface = handlerType
+                    .GetInterfaces()
+                    .SingleOrDefault(i =>
+                        i.IsGenericType &&
+                        i.GetGenericTypeDefinition() ==
+                            typeof(IAuthorizationRequirementHandler<,>) &&
+                        i.GetGenericArguments()[0].IsInstanceOfType(requirement) &&
+                        i.GetGenericArguments()[1].IsInstanceOfType(request));
+
+            if (iface == null)
+            {
+                throw new InvalidOperationException(
+                    $"Handler {handlerType.FullName} cannot handle request {request.GetType().FullName}");
+            }
+
+            // Get HandleAsync method from the interface
+            var handleMethod = iface.GetMethod("HandleAsync")!;
+
+            // Invoke through the interface method
+            return (Task)handleMethod.Invoke(
+                requirementHandler,
+                [requirement, request, cancellationToken])!;
         }
     }
 }
