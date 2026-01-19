@@ -38,7 +38,7 @@ internal class EntityTypeProjections<TEntity> : IEntityTypeProjections<TEntity>
             ? (IQueryable<TResult>)doProject(
                 entityQuery,
                 projectionContext)
-            : throw new InvalidOperationException("Please specify a projection");
+            : throw new InvalidOperationException($"No projection specified from '{typeof(TEntity).FullName}' to '{typeof(TResult).FullName}'.");
     }    
 
     private static IReadOnlyCollection<(Type ResultType, DoProjectFunc DoProject)> CreateDoProjectFuncMap(
