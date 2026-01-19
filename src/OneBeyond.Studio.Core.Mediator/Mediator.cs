@@ -44,7 +44,12 @@ public sealed class Mediator : IMediator
     {
         EnsureArg.IsNotNull(request, nameof(request));
 
-        var handler = _serviceProvider.GetService<IRequestHandler<IRequest<TResult>, TResult>>();
+        var requestType = request.GetType();
+
+        var handlerType = typeof(IRequestHandler<,>)
+            .MakeGenericType(requestType, typeof(TResult));
+
+        var handler = _serviceProvider.GetService(handlerType);
 
         // Low risk - as handlers should be DIed by assembly scan - namely just to catch mistakes.
         if (handler is null)
@@ -52,8 +57,13 @@ public sealed class Mediator : IMediator
             throw new InvalidOperationException($"A handler needs to be registered for request {typeof(IRequest<TResult>)}");
         }
 
+        var method = handlerType.GetMethod(nameof(IRequestHandler<IRequest<TResult>, TResult>.Handle))!;
+
         var pipeline = _serviceProvider.GetServices<IMediatorPipelineBehaviour<IRequest<TResult>, TResult>>();
-        var handlerDelegate = () => handler.Handle(request, cancellationToken);
+
+        var handlerDelegate = () => (Task<TResult>)method.Invoke(
+                handler,
+                new object[] { request, cancellationToken })!;
 
         foreach (var behaviour in pipeline)
         {

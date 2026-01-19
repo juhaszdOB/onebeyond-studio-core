@@ -36,7 +36,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command1>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -61,7 +61,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command2>).FullName,
                 testableContainer.Dequeue());
         }
 
@@ -82,7 +82,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command3>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -111,7 +111,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command4>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -137,7 +137,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
             // Second requirement handler is not executed
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command5>).FullName,
                 testableContainer.Dequeue());
         }
     }
@@ -198,7 +198,7 @@ public sealed class AuthorizationRequirementHandlerTests : TestsBase
                 testableContainer.Dequeue());
             // Command handler is executed last
             Assert.AreEqual(
-                typeof(TestableCommandHandlers.GenericCommandHandler<IRequest<bool>>).FullName,
+                typeof(TestableCommandHandlers.GenericCommandHandler<TestableCommands.Command6>).FullName,
                 testableContainer.Dequeue());
         }
     }
