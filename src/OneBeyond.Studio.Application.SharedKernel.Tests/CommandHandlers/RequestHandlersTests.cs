@@ -56,6 +56,32 @@ public sealed class RequestHandlersTests : TestsBase
         }
     }
 
+    [TestMethod]
+    public async Task TestDerivedCommands()
+    {
+        using (var serviceScope = ServiceProvider.CreateScope())
+        {
+            var serviceProvider = serviceScope.ServiceProvider;
+            var testableContainer = serviceProvider.GetRequiredService<Queue<string>>();
+            var mediator = serviceProvider.GetRequiredService<IMediator>();
+
+            await mediator.Send(new DerivedCommand1());
+
+            Assert.HasCount(1, testableContainer);
+            Assert.AreEqual(
+                typeof(DerivedCommand1Handler).FullName,
+                testableContainer.Dequeue());
+
+            await mediator.Send(new DerivedCommand2());
+
+            Assert.HasCount(1, testableContainer);
+            Assert.AreEqual(
+                typeof(DerivedCommand2Handler).FullName,
+                testableContainer.Dequeue());
+
+        }
+    }
+
     protected override void ConfigureTestServices(
         IConfiguration configuration,
         IServiceCollection serviceCollection)
