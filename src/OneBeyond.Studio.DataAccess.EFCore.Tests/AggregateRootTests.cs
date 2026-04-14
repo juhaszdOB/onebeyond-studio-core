@@ -1,14 +1,11 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.Exceptions;
 using OneBeyond.Studio.Application.SharedKernel.Repositories;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.Entities.PurchaseOrders;
+using Xunit;
 
 namespace OneBeyond.Studio.DataAccess.EFCore.Tests;
 
-[TestClass]
 public sealed class AggregateRootTests : InMemoryTestsBase
 {
     public AggregateRootTests()
@@ -16,7 +13,7 @@ public sealed class AggregateRootTests : InMemoryTestsBase
     {
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestAggregateRootCreateEntity()
     {
         var vendorId = default(Guid);
@@ -25,11 +22,11 @@ public sealed class AggregateRootTests : InMemoryTestsBase
         {
             var vendorsRWRepository = serviceScope.ServiceProvider.GetRequiredService<IAggregateRootRWRepository<Vendors, Vendor, Guid>>();
 
-            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, default);
+            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, TestContext.Current.CancellationToken);
 
             var vendor = aggregateRoot.AddVendor("VendorVasya");
 
-            await vendorsRWRepository.UpdateAsync(aggregateRoot, default);
+            await vendorsRWRepository.UpdateAsync(aggregateRoot, TestContext.Current.CancellationToken);
 
             vendorId = vendor.Id;
         }
@@ -40,14 +37,13 @@ public sealed class AggregateRootTests : InMemoryTestsBase
                 .GetRequiredService<IRWRepository<Vendor, Guid>>();
 
             var vendor = await vendorRWRepository.GetByIdAsync(
-                vendorId,
-                default);
+                vendorId,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual("VendorVasya", vendor.Name);
+            Assert.Equal("VendorVasya", vendor.Name);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestAggregateRootCreateMultipleEntitiesWithValidation()
     {
         var vendorVasyaId = default(Guid);
@@ -57,7 +53,7 @@ public sealed class AggregateRootTests : InMemoryTestsBase
         {
             var vendorsRWRepository = serviceScope.ServiceProvider.GetRequiredService<IAggregateRootRWRepository<Vendors, Vendor, Guid>>();
 
-            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, default);
+            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, TestContext.Current.CancellationToken);
 
             var vendorVasya = aggregateRoot.AddVendor("VendorVasya");
 
@@ -65,7 +61,7 @@ public sealed class AggregateRootTests : InMemoryTestsBase
 
             var vendorPetya = aggregateRoot.AddVendor("VendorPetya");
 
-            await vendorsRWRepository.UpdateAsync(aggregateRoot, default);
+            await vendorsRWRepository.UpdateAsync(aggregateRoot, TestContext.Current.CancellationToken);
 
             vendorVasyaId = vendorVasya.Id;
             vendorPetyaId = vendorPetya.Id;
@@ -77,20 +73,18 @@ public sealed class AggregateRootTests : InMemoryTestsBase
                 .GetRequiredService<IRORepository<Vendor, Guid>>();
 
             var vendorV = await vendorRWRepository.GetByIdAsync(
-                vendorVasyaId,
-                default);
+                vendorVasyaId,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual("VendorVasya", vendorV.Name);
+            Assert.Equal("VendorVasya", vendorV.Name);
 
             var vendorP = await vendorRWRepository.GetByIdAsync(
-                vendorPetyaId,
-                default);
+                vendorPetyaId,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual("VendorPetya", vendorP.Name);
+            Assert.Equal("VendorPetya", vendorP.Name);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestAggregateRootUpdateMultipleEntitiesWithValidation()
     {
         var vendorVasyaId = default(Guid);
@@ -100,24 +94,24 @@ public sealed class AggregateRootTests : InMemoryTestsBase
         {
             var vendorsRWRepository = serviceScope.ServiceProvider.GetRequiredService<IAggregateRootRWRepository<Vendors, Vendor, Guid>>();
 
-            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, default);
+            var aggregateRoot = await vendorsRWRepository.GetAsync(x => true, TestContext.Current.CancellationToken);
 
             var vendorVasya = aggregateRoot.AddVendor("VendorVasya");
             var vendorPetya = aggregateRoot.AddVendor("VendorPetya");
 
-            await vendorsRWRepository.UpdateAsync(aggregateRoot, default);
+            await vendorsRWRepository.UpdateAsync(aggregateRoot, TestContext.Current.CancellationToken);
 
             vendorVasyaId = vendorVasya.Id;
             vendorPetyaId = vendorPetya.Id;
 
-            var updateAggregateRoot = await vendorsRWRepository.GetAsync(x => true, default);
+            var updateAggregateRoot = await vendorsRWRepository.GetAsync(x => true, TestContext.Current.CancellationToken);
 
             Assert.Throws<ValidationException>(() => updateAggregateRoot.UpdateVendor(vendorPetyaId, "VendorVasya"));
 
             updateAggregateRoot.UpdateVendor(vendorVasyaId, "SuperVendorVasya");
             updateAggregateRoot.UpdateVendor(vendorPetyaId, "SuperVendorPetya");
 
-            await vendorsRWRepository.UpdateAsync(aggregateRoot, default);
+            await vendorsRWRepository.UpdateAsync(updateAggregateRoot, TestContext.Current.CancellationToken);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -126,16 +120,14 @@ public sealed class AggregateRootTests : InMemoryTestsBase
                 .GetRequiredService<IRORepository<Vendor, Guid>>();
 
             var vendorV = await vendorRWRepository.GetByIdAsync(
-                vendorVasyaId,
-                default);
+                vendorVasyaId,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual("SuperVendorVasya", vendorV.Name);
+            Assert.Equal("SuperVendorVasya", vendorV.Name);
 
             var vendorP = await vendorRWRepository.GetByIdAsync(
-                vendorPetyaId,
-                default);
+                vendorPetyaId,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual("SuperVendorPetya", vendorP.Name);
+            Assert.Equal("SuperVendorPetya", vendorP.Name);
         }
     }
 }

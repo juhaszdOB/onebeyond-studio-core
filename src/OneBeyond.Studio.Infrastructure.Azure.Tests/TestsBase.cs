@@ -1,23 +1,20 @@
-using System;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace OneBeyond.Studio.Infrastructure.Azure.Tests;
 
-public abstract class TestsBase
+public abstract class TestsBase : IAsyncLifetime
 {
     private IServiceScope? _serviceScope;
 
     protected IServiceProvider? ServiceProvider { get; private set; }
 
-    [TestInitialize]
-    public void InitializeTest()
+    public ValueTask InitializeAsync()
     {
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false)
             .Build();
 
         var serviceCollection = new ServiceCollection();
@@ -37,14 +34,17 @@ public abstract class TestsBase
         _serviceScope = serviceProvider.CreateScope();
 
         ServiceProvider = _serviceScope.ServiceProvider;
+
+        return ValueTask.CompletedTask;
     }
 
-    [TestCleanup]
-    public void CleanupTest()
+    public virtual ValueTask DisposeAsync()
     {
         ServiceProvider = null;
         _serviceScope?.Dispose();
         _serviceScope = null;
+
+        return ValueTask.CompletedTask;
     }
 
     protected abstract void ConfigureTestServices(

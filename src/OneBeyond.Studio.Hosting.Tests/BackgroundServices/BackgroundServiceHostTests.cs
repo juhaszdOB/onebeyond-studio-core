@@ -2,17 +2,16 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using OneBeyond.Studio.Hosting.BackgroundServices;
 using OneBeyond.Studio.Hosting.DependencyInjection;
+using Xunit;
 
 namespace OneBeyond.Studio.Hosting.Tests.BackgroundServices;
 
-[TestClass]
 public sealed class BackgroundServiceHostTests
 {
-    [TestMethod]
+    [Fact]
     public async Task Uses_globally_registered_services()
     {
         // Arrange
@@ -25,13 +24,13 @@ public sealed class BackgroundServiceHostTests
 
         // Technically this test contains a race condition, because StartAsync does not await the execution of the service
         // because that would defeat the purpose of the host.
-        await Task.Delay(2000);
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
         // Assert
         backgroundServiceDependencyMock.Verify((dependency) => dependency.DoSomething(), Times.Once);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Uses_locally_registered_service()
     {
         // Arrange
@@ -47,7 +46,7 @@ public sealed class BackgroundServiceHostTests
         await backgroundServiceHost.StartAsync(CancellationToken.None);
         // Technically this test contains a race condition, because StartAsync does not await the execution of the service
         // because that would defeat the purpose of the host.
-        await Task.Delay(2000);
+        await Task.Delay(2000, TestContext.Current.CancellationToken);
 
         // Assert
         globalBackgroundServiceDependencyMock.Verify((dependency) => dependency.DoSomething(), Times.Never);

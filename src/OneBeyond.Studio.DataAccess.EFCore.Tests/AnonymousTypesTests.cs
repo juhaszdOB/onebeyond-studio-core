@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.Repositories;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.Entities.PurchaseOrders;
 using OneBeyond.Studio.Domain.SharedKernel.Specifications;
+using Xunit;
 
 namespace OneBeyond.Studio.DataAccess.EFCore.Tests;
 
-[TestClass]
 public sealed class AnonymousTypesTests : InMemoryTestsBase
 {
     public AnonymousTypesTests()
@@ -18,7 +13,7 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
     {
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestAnonymousTypeGetById()
     {
         var product1 = new Product("ring", "jewelery", "cartier", 999.99M, "france");
@@ -27,7 +22,7 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
         {
             var productRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<Product, Guid>>();
 
-            await productRWRepository.CreateAsync(product1, default);
+            await productRWRepository.CreateAsync(product1, TestContext.Current.CancellationToken);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -41,12 +36,11 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
                 {
                     ProductId = product.Id,
                     ProductName = product.Name
-                },
-                default);
+                },                TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(product1Dto);
-            Assert.AreEqual(product1.Id, product1Dto.ProductId);
-            Assert.AreEqual(product1.Name, product1Dto.ProductName);
+            Assert.NotNull(product1Dto);
+            Assert.Equal(product1.Id, product1Dto.ProductId);
+            Assert.Equal(product1.Name, product1Dto.ProductName);
 
             var product2Dto = await productRORepository.GetByIdAsync(
                 product1.Id,
@@ -57,19 +51,18 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
                     ProductCountry = product.CountryOfOrigin,
                     ProductPrice = product.Price,
                     ProductBrand = product.Brand
-                },
-                default);
+                },                TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(product2Dto);
-            Assert.AreEqual(product1.Id, product2Dto.ProductId);
-            Assert.AreEqual(product1.Type, product2Dto.ProductType);
-            Assert.AreEqual(product1.CountryOfOrigin, product2Dto.ProductCountry);
-            Assert.AreEqual(product1.Brand, product2Dto.ProductBrand);
-            Assert.AreEqual(product1.Price, product2Dto.ProductPrice);
+            Assert.NotNull(product2Dto);
+            Assert.Equal(product1.Id, product2Dto.ProductId);
+            Assert.Equal(product1.Type, product2Dto.ProductType);
+            Assert.Equal(product1.CountryOfOrigin, product2Dto.ProductCountry);
+            Assert.Equal(product1.Brand, product2Dto.ProductBrand);
+            Assert.Equal(product1.Price, product2Dto.ProductPrice);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestAnonymousList()
     {
         var product1 = new Product("ring", "jewelery", "cartier", 999.99M, "france");
@@ -82,11 +75,11 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
         {
             var productRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<Product, Guid>>();
 
-            await productRWRepository.CreateAsync(product1, default);
-            await productRWRepository.CreateAsync(product2, default);
-            await productRWRepository.CreateAsync(product3, default);
-            await productRWRepository.CreateAsync(product4, default);
-            await productRWRepository.CreateAsync(product5, default);
+            await productRWRepository.CreateAsync(product1, TestContext.Current.CancellationToken);
+            await productRWRepository.CreateAsync(product2, TestContext.Current.CancellationToken);
+            await productRWRepository.CreateAsync(product3, TestContext.Current.CancellationToken);
+            await productRWRepository.CreateAsync(product4, TestContext.Current.CancellationToken);
+            await productRWRepository.CreateAsync(product5, TestContext.Current.CancellationToken);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -100,18 +93,19 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
                     ProductId = product.Id,
                     ProductName = product.Name
                 },
-                filter: (product) => product.Brand == "cartier");
+                filter: (product) => product.Brand == "cartier",
+                cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(productDtos);
-            Assert.HasCount(2, productDtos);
+            Assert.NotNull(productDtos);
+            Assert.Equal(2, productDtos.Count());
 
             var product1Dto = productDtos.FirstOrDefault((product) => product.ProductId == product1.Id);
-            Assert.IsNotNull(product1Dto);
-            Assert.AreEqual(product1.Name, product1Dto!.ProductName);
+            Assert.NotNull(product1Dto);
+            Assert.Equal(product1.Name, product1Dto!.ProductName);
 
             var product5Dto = productDtos.FirstOrDefault((product) => product.ProductId == product5.Id);
-            Assert.IsNotNull(product5Dto);
-            Assert.AreEqual(product5.Name, product5Dto!.ProductName);
+            Assert.NotNull(product5Dto);
+            Assert.Equal(product5.Name, product5Dto!.ProductName);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -126,20 +120,21 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
                     ProductType = product.Type,
                     ProductPrice = product.Price
                 },
-                filter: (product) => product.CountryOfOrigin == "us" && product.Price > 1000M);
+                filter: (product) => product.CountryOfOrigin == "us" && product.Price > 1000M,
+                cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(productDtos);
-            Assert.HasCount(2, productDtos);
+            Assert.NotNull(productDtos);
+            Assert.Equal(2, productDtos.Count());
 
             var product2Dto = productDtos.FirstOrDefault((product) => product.ProductId == product2.Id);
-            Assert.IsNotNull(product2Dto);
-            Assert.AreEqual(product2.Type, product2Dto!.ProductType);
-            Assert.AreEqual(product2.Price, product2Dto.ProductPrice);
+            Assert.NotNull(product2Dto);
+            Assert.Equal(product2.Type, product2Dto!.ProductType);
+            Assert.Equal(product2.Price, product2Dto.ProductPrice);
 
             var product3Dto = productDtos.FirstOrDefault((product) => product.ProductId == product3.Id);
-            Assert.IsNotNull(product3Dto);
-            Assert.AreEqual(product3.Type, product3Dto!.ProductType);
-            Assert.AreEqual(product3.Price, product3Dto.ProductPrice);
+            Assert.NotNull(product3Dto);
+            Assert.Equal(product3.Type, product3Dto!.ProductType);
+            Assert.Equal(product3.Price, product3Dto.ProductPrice);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -156,24 +151,25 @@ public sealed class AnonymousTypesTests : InMemoryTestsBase
                     ProductPrice = product.Price
                 },
                 filter: (product) => product.Price > 1000M,
-                sortings: new List<Sorting<Product>> { Sorting.CreateDescending<Product>(x => x.Price) })
+                sortings: new List<Sorting<Product>> { Sorting.CreateDescending<Product>(x => x.Price) },
+                cancellationToken: TestContext.Current.CancellationToken)
                 ).ToArray();
 
 
-            Assert.IsNotNull(productDtos);
-            Assert.HasCount(3, productDtos);
+            Assert.NotNull(productDtos);
+            Assert.Equal(3, productDtos.Length);
 
             var product3Dto = productDtos[0];
-            Assert.IsNotNull(product3Dto);
-            Assert.AreEqual(product3.Id, product3Dto.ProductId);
+            Assert.NotNull(product3Dto);
+            Assert.Equal(product3.Id, product3Dto.ProductId);
 
             var product2Dto = productDtos[1];
-            Assert.IsNotNull(product2Dto);
-            Assert.AreEqual(product2.Id, product2Dto.ProductId);
+            Assert.NotNull(product2Dto);
+            Assert.Equal(product2.Id, product2Dto.ProductId);
 
             var product5Dto = productDtos[2];
-            Assert.IsNotNull(product5Dto);
-            Assert.AreEqual(product5.Id, product5Dto.ProductId);
+            Assert.NotNull(product5Dto);
+            Assert.Equal(product5.Id, product5Dto.ProductId);
         }
     }
 }

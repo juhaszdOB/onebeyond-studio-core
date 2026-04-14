@@ -1,4 +1,3 @@
-using System;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -14,6 +13,7 @@ public abstract class InMemoryTestsBase : TestsBase
     private readonly bool _withDomainEvents;
 
     protected InMemoryTestsBase(bool withDomainEvents)
+        : base()
     {
         _withDomainEvents = withDomainEvents;
     }

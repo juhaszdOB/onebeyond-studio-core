@@ -1,25 +1,22 @@
-using System;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Crosscuts.Logging;
+using Xunit;
 
 namespace OneBeyond.Studio.Application.SharedKernel.Tests.Infrastructure;
 
-public abstract class TestsBase
+public abstract class TestsBase : IAsyncLifetime
 {
     private IServiceScope? _serviceScope;
 
     protected IServiceProvider ServiceProvider { get; private set; } = default!;
 
-    [TestInitialize]
-    public void InitializeTest()
+    public ValueTask InitializeAsync()
     {
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", true)
             .Build();
 
         var serviceCollection = new ServiceCollection();
@@ -45,14 +42,17 @@ public abstract class TestsBase
         var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
 
         LogManager.TryConfigure(loggerFactory);
+
+        return ValueTask.CompletedTask;
     }
 
-    [TestCleanup]
-    public void CleanupTest()
+    public virtual ValueTask DisposeAsync()
     {
         ServiceProvider = default!;
         _serviceScope?.Dispose();
         _serviceScope = null;
+
+        return ValueTask.CompletedTask;
     }
 
     protected abstract void ConfigureTestServices(

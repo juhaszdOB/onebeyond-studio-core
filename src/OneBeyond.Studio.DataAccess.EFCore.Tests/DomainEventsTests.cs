@@ -1,21 +1,17 @@
-using System;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.DomainEvents;
 using OneBeyond.Studio.Application.SharedKernel.Repositories;
 using OneBeyond.Studio.Application.SharedKernel.Specifications;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.Entities.PurchaseOrders;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.Entities.Services;
+using Xunit;
 
 namespace OneBeyond.Studio.DataAccess.EFCore.Tests;
 
-[TestClass]
 public sealed class DomainEventsTests : InMemoryTestsBase
 {
     public DomainEventsTests()
@@ -50,7 +46,7 @@ public sealed class DomainEventsTests : InMemoryTestsBase
             .InstancePerLifetimeScope();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestDomainEventHandlersAreCalledAndDomainEventsAreQueued()
     {
         var purchaseOrderId = default(Guid);
@@ -72,18 +68,18 @@ public sealed class DomainEventsTests : InMemoryTestsBase
             preSaveScopedItemContainer.Clear();
             postSaveScopedItemContainer.Clear();
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
 
             var dbContext = serviceProvider.GetRequiredService<DbContexts.DbContext>();
             var postSaveDomainEventDispatcher = serviceProvider.GetRequiredService<IPostSaveDomainEventDispatcher>();
             var raisedDomainEventReceiver = serviceProvider.GetRequiredService<IRaisedDomainEventReceiver>();
-            var raisedDomainEventCount = await dbContext.Set<RaisedDomainEvent>().CountAsync();
+            var raisedDomainEventCount = await dbContext.Set<RaisedDomainEvent>().CountAsync(TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, raisedDomainEventCount);
-            Assert.HasCount(1, preSaveScopedItemContainer.Items);
-            Assert.IsEmpty(postSaveScopedItemContainer.Items);
+            Assert.Equal(2, raisedDomainEventCount);
+            Assert.Single(preSaveScopedItemContainer.Items);
+            Assert.Empty(postSaveScopedItemContainer.Items);
 
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -102,7 +98,7 @@ public sealed class DomainEventsTests : InMemoryTestsBase
                 },
                 cancellationTokenSource.Token);
 
-            Assert.HasCount(4, postSaveScopedItemContainer.Items);
+            Assert.Equal(4, postSaveScopedItemContainer.Items.Count);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -114,24 +110,23 @@ public sealed class DomainEventsTests : InMemoryTestsBase
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
                 Includes.Create(
-                    (PurchaseOrder purchaseOrder) => purchaseOrder.Lines),
-                default);
+                    (PurchaseOrder purchaseOrder) => purchaseOrder.Lines),                TestContext.Current.CancellationToken);
 
             purchaseOrder.AddLine("Third");
 
             preSaveScopedItemContainer.Clear();
             postSaveScopedItemContainer.Clear();
 
-            await purchaseOrderRWRepository.UpdateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.UpdateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             var dbContext = serviceProvider.GetRequiredService<DbContexts.DbContext>();
             var postSaveDomainEventDispatcher = serviceProvider.GetRequiredService<IPostSaveDomainEventDispatcher>();
             var raisedDomainEventReceiver = serviceProvider.GetRequiredService<IRaisedDomainEventReceiver>();
-            var raisedDomainEventCount = await dbContext.Set<RaisedDomainEvent>().CountAsync();
+            var raisedDomainEventCount = await dbContext.Set<RaisedDomainEvent>().CountAsync(TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(1, raisedDomainEventCount);
-            Assert.HasCount(1, preSaveScopedItemContainer.Items);
-            Assert.IsEmpty(postSaveScopedItemContainer.Items);
+            Assert.Equal(1, raisedDomainEventCount);
+            Assert.Single(preSaveScopedItemContainer.Items);
+            Assert.Empty(postSaveScopedItemContainer.Items);
 
             var cancellationTokenSource = new CancellationTokenSource();
 
@@ -150,7 +145,7 @@ public sealed class DomainEventsTests : InMemoryTestsBase
                 },
                 cancellationTokenSource.Token);
 
-            Assert.HasCount(2, postSaveScopedItemContainer.Items);
+            Assert.Equal(2, postSaveScopedItemContainer.Items.Count);
         }
     }
 }

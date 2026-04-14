@@ -1,17 +1,13 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.Repositories;
 using OneBeyond.Studio.Application.SharedKernel.Specifications;
 using OneBeyond.Studio.DataAccess.EFCore.Repositories;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.DbContexts;
 using OneBeyond.Studio.DataAccess.EFCore.Tests.Entities.PurchaseOrders;
+using Xunit;
 
 namespace OneBeyond.Studio.DataAccess.EFCore.Tests;
 
-[TestClass]
 public sealed class FilteredIncludesTests : InMemoryTestsBase
 {
     public FilteredIncludesTests()
@@ -19,7 +15,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
     {
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestFilteredIncludeLoadsOnlyRequestedChildren()
     {
         var purchaseOrderId = default(Guid);
@@ -45,7 +41,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrderLine.AddComment("___").Archive();
             purchaseOrderLine.AddComment("___").Archive();
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -61,11 +57,10 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(3, purchaseOrder.Lines.Count());
-            Assert.AreEqual(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(3, purchaseOrder.Lines.Count());
+            Assert.Equal(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -73,9 +68,9 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var purchaseOrderRWRepository = serviceScope.ServiceProvider
                 .GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, default);
+            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(0, purchaseOrder.Lines.Count());
+            Assert.Empty(purchaseOrder.Lines);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -89,13 +84,12 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(0, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Empty(purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -110,13 +104,12 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Equal(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -144,24 +137,23 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
             var purchaseOrderLineComments = purchaseOrder.Lines
                 .SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments)
                 .ToArray();
-            Assert.HasCount(4, purchaseOrderLineComments);
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.2"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.2"));
+            Assert.Equal(4, purchaseOrderLineComments.Count());
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.2");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.2");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestFilteredIncludeWithMultiplePathsLoadsOnlyRequestedChildren()
     {
         var purchaseOrderId = default(Guid);
@@ -195,7 +187,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrder.AddTag("Tag.2.A");
             purchaseOrder.AddTag("Tag.2.B");
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -212,12 +204,11 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(3, purchaseOrder.Lines.Count());
-            Assert.AreEqual(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(4, purchaseOrder.Tags);
+            Assert.Equal(3, purchaseOrder.Lines.Count());
+            Assert.Equal(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(4, purchaseOrder.Tags.Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -225,10 +216,10 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var purchaseOrderRWRepository = serviceScope.ServiceProvider
                 .GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, default);
+            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(0, purchaseOrder.Lines.Count());
-            Assert.IsEmpty(purchaseOrder.Tags);
+            Assert.Empty(purchaseOrder.Lines);
+            Assert.Empty(purchaseOrder.Tags);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -246,14 +237,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(0, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(4, purchaseOrder.Tags);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Empty(purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments));
+            Assert.Equal(4, purchaseOrder.Tags.Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -270,16 +260,15 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(2, purchaseOrder.Tags);
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.1.A"));
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.2.A"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Equal(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Tags.Count());
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.1.A");
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.2.A");
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -309,27 +298,26 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
             var purchaseOrderLineComments = purchaseOrder.Lines
                 .SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments)
                 .ToArray();
-            Assert.HasCount(4, purchaseOrderLineComments);
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.2"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.2"));
-            Assert.HasCount(2, purchaseOrder.Tags);
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.1.B"));
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.2.B"));
+            Assert.Equal(4, purchaseOrderLineComments.Count());
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.2");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.2");
+            Assert.Equal(2, purchaseOrder.Tags.Count());
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.1.B");
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.2.B");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestFilteredIncludeWithSingleEntityPathLoadsOnlyRequestedChildren()
     {
         var vendorId = default(Guid);
@@ -340,7 +328,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var vendor = new Vendor("Vendor.1");
 
-            await vendorRWRepository.CreateAsync(vendor, default);
+            await vendorRWRepository.CreateAsync(vendor, TestContext.Current.CancellationToken);
 
             vendorId = vendor.Id;
         }
@@ -353,7 +341,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var account = new Account("Account.1");
 
-            await accountRWRepository.CreateAsync(account, default);
+            await accountRWRepository.CreateAsync(account, TestContext.Current.CancellationToken);
 
             accountId = account.Id;
         }
@@ -366,9 +354,9 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var accountRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<Account, Guid>>();
             var purchaseOrderRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var vendor = await vendorRWRepository.GetByIdAsync(vendorId, default);
+            var vendor = await vendorRWRepository.GetByIdAsync(vendorId, TestContext.Current.CancellationToken);
 
-            var account = await accountRWRepository.GetByIdAsync(accountId, default);
+            var account = await accountRWRepository.GetByIdAsync(accountId, TestContext.Current.CancellationToken);
 
             var purchaseOrder = new PurchaseOrder();
 
@@ -395,7 +383,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrderLine.AddComment("___").Archive();
             purchaseOrderLine.AddComment("___").Archive();
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -411,14 +399,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is null));
+            Assert.Null(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is null));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -443,14 +430,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
+            Assert.Null(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -477,18 +463,17 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
+            Assert.NotNull(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestEFStyleFilteredIncludeLoadsOnlyRequestedChildren()
     {
         var purchaseOrderId = default(Guid);
@@ -514,7 +499,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrderLine.AddComment("___").Archive();
             purchaseOrderLine.AddComment("___").Archive();
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -530,11 +515,10 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(3, purchaseOrder.Lines.Count());
-            Assert.AreEqual(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(3, purchaseOrder.Lines.Count());
+            Assert.Equal(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -542,9 +526,9 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var purchaseOrderRWRepository = serviceScope.ServiceProvider
                 .GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, default);
+            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(0, purchaseOrder.Lines.Count());
+            Assert.Empty(purchaseOrder.Lines);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -557,13 +541,12 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(0, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Empty(purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -577,13 +560,12 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Equal(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -597,24 +579,23 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
             var purchaseOrderLineComments = purchaseOrder.Lines
                 .SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments)
                 .ToArray();
-            Assert.HasCount(4, purchaseOrderLineComments);
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.2"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.2"));
+            Assert.Equal(4, purchaseOrderLineComments.Count());
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.2");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.2");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestEFStyleFilteredIncludeWithMultiplePathsLoadsOnlyRequestedChildren()
     {
         var purchaseOrderId = default(Guid);
@@ -648,7 +629,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrder.AddTag("Tag.2.A");
             purchaseOrder.AddTag("Tag.2.B");
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -665,12 +646,11 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(3, purchaseOrder.Lines.Count());
-            Assert.AreEqual(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(4, purchaseOrder.Tags);
+            Assert.Equal(3, purchaseOrder.Lines.Count());
+            Assert.Equal(12, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(4, purchaseOrder.Tags.Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -678,10 +658,10 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var purchaseOrderRWRepository = serviceScope.ServiceProvider
                 .GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, default);
+            var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(purchaseOrderId, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(0, purchaseOrder.Lines.Count());
-            Assert.IsEmpty(purchaseOrder.Tags);
+            Assert.Empty(purchaseOrder.Lines);
+            Assert.Empty(purchaseOrder.Tags);
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -698,14 +678,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(0, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(4, purchaseOrder.Tags);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Empty(purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments));
+            Assert.Equal(4, purchaseOrder.Tags.Count());
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -720,16 +699,15 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.AreEqual(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
-            Assert.HasCount(2, purchaseOrder.Tags);
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.1.A"));
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.2.A"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.Equal(8, purchaseOrder.Lines.SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments).Count());
+            Assert.Equal(2, purchaseOrder.Tags.Count());
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.1.A");
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.2.A");
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -744,27 +722,26 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
             var purchaseOrderLineComments = purchaseOrder.Lines
                 .SelectMany((purchaseOrderLine) => purchaseOrderLine.Comments)
                 .ToArray();
-            Assert.HasCount(4, purchaseOrderLineComments);
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "1.2"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.1"));
-            Assert.IsTrue(purchaseOrderLineComments.Any((purchaseOrderLineComment) => purchaseOrderLineComment.Text == "3.2"));
-            Assert.HasCount(2, purchaseOrder.Tags);
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.1.B"));
-            Assert.IsTrue(purchaseOrder.Tags.Any((purchaseOrderTag) => purchaseOrderTag.Description == "Tag.2.B"));
+            Assert.Equal(4, purchaseOrderLineComments.Count());
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "1.2");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.1");
+            Assert.Contains(purchaseOrderLineComments, purchaseOrderLineComment => purchaseOrderLineComment.Text == "3.2");
+            Assert.Equal(2, purchaseOrder.Tags.Count());
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.1.B");
+            Assert.Contains(purchaseOrder.Tags, purchaseOrderTag => purchaseOrderTag.Description == "Tag.2.B");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TestEFStyleFilteredIncludeWithSingleEntityPathLoadsOnlyRequestedChildren()
     {
         var vendorId = default(Guid);
@@ -775,7 +752,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var vendor = new Vendor("Vendor.1");
 
-            await vendorRWRepository.CreateAsync(vendor, default);
+            await vendorRWRepository.CreateAsync(vendor, TestContext.Current.CancellationToken);
 
             vendorId = vendor.Id;
         }
@@ -788,7 +765,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var account = new Account("Account.1");
 
-            await accountRWRepository.CreateAsync(account, default);
+            await accountRWRepository.CreateAsync(account, TestContext.Current.CancellationToken);
 
             accountId = account.Id;
         }
@@ -801,9 +778,9 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             var accountRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<Account, Guid>>();
             var purchaseOrderRWRepository = serviceScope.ServiceProvider.GetRequiredService<IRWRepository<PurchaseOrder, Guid>>();
 
-            var vendor = await vendorRWRepository.GetByIdAsync(vendorId, default);
+            var vendor = await vendorRWRepository.GetByIdAsync(vendorId, TestContext.Current.CancellationToken);
 
-            var account = await accountRWRepository.GetByIdAsync(accountId, default);
+            var account = await accountRWRepository.GetByIdAsync(accountId, TestContext.Current.CancellationToken);
 
             var purchaseOrder = new PurchaseOrder();
 
@@ -830,7 +807,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
             purchaseOrderLine.AddComment("___").Archive();
             purchaseOrderLine.AddComment("___").Archive();
 
-            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, default);
+            await purchaseOrderRWRepository.CreateAsync(purchaseOrder, TestContext.Current.CancellationToken);
 
             purchaseOrderId = purchaseOrder.Id;
         }
@@ -845,14 +822,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is null));
+            Assert.Null(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is null));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -866,14 +842,13 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
+            Assert.Null(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
         }
 
         using (var serviceScope = ServiceProvider.CreateScope())
@@ -888,18 +863,17 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
 
             var purchaseOrder = await purchaseOrderRWRepository.GetByIdAsync(
                 purchaseOrderId,
-                includes,
-                default);
+                includes,                TestContext.Current.CancellationToken);
 
-            Assert.IsNotNull(purchaseOrder.Vendor);
-            Assert.AreEqual(2, purchaseOrder.Lines.Count());
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "First"));
-            Assert.IsTrue(purchaseOrder.Lines.Any((purchaseOrderLine) => purchaseOrderLine.ItemName == "Third"));
-            Assert.IsTrue(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
+            Assert.NotNull(purchaseOrder.Vendor);
+            Assert.Equal(2, purchaseOrder.Lines.Count());
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "First");
+            Assert.Contains(purchaseOrder.Lines, purchaseOrderLine => purchaseOrderLine.ItemName == "Third");
+            Assert.True(purchaseOrder.Lines.All((purchaseOrderLine) => purchaseOrderLine.Account is not null));
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void TestIncludesTraitsWhereClauseDetection()
     {
         var includes = new Includes<PurchaseOrder>()
@@ -909,7 +883,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
         var includesTraits = new IncludesTraits<PurchaseOrder>();
         includesTraits = includes.Replay(includesTraits);
 
-        Assert.IsFalse(includesTraits.HaveWhereClause);
+        Assert.False(includesTraits.HaveWhereClause);
 
         includes = new Includes<PurchaseOrder>()
             .Include((purchaseOrder) => purchaseOrder.Lines)
@@ -919,7 +893,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
         includesTraits = new IncludesTraits<PurchaseOrder>();
         includesTraits = includes.Replay(includesTraits);
 
-        Assert.IsTrue(includesTraits.HaveWhereClause);
+        Assert.True(includesTraits.HaveWhereClause);
 
         includes = new Includes<PurchaseOrder>()
             .Include((purchaseOrder) => purchaseOrder.Lines)
@@ -929,7 +903,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
         includesTraits = new IncludesTraits<PurchaseOrder>();
         includesTraits = includes.Replay(includesTraits);
 
-        Assert.IsTrue(includesTraits.HaveWhereClause);
+        Assert.True(includesTraits.HaveWhereClause);
 
         includes = new Includes<PurchaseOrder>()
             .Include((purchaseOrder) => purchaseOrder.Lines)
@@ -940,6 +914,7 @@ public sealed class FilteredIncludesTests : InMemoryTestsBase
         includesTraits = new IncludesTraits<PurchaseOrder>();
         includesTraits = includes.Replay(includesTraits);
 
-        Assert.IsTrue(includesTraits.HaveWhereClause);
+        Assert.True(includesTraits.HaveWhereClause);
     }
 }
+

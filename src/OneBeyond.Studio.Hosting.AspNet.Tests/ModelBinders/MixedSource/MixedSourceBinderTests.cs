@@ -1,16 +1,15 @@
-using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Hosting.AspNet.ModelBinders.MixedSource;
 using OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.BindingContext;
 using OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.BindingContext.BindingModels;
+using Xunit;
 
 namespace OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.MixedSource;
 
-[TestClass]
+
 public sealed class MixedSourceBinderTests
 {
-    [TestMethod]
+    [Fact]
     public async Task DefaultSourceOrderIsBodyRoute()
     {
         var context = new TestBindingContext(
@@ -26,7 +25,7 @@ public sealed class MixedSourceBinderTests
         values.Value<string>("routeVal").Should().Be(TestBindingContext.VAL_FROM_ROUTE);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BodyValuesOverrideRoute()
     {
         var context = new TestBindingContext(new MixedSourceBinderSource(
@@ -43,7 +42,7 @@ public sealed class MixedSourceBinderTests
         values.Value<string>("routeVal").Should().Be(TestBindingContext.VAL_FROM_ROUTE);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RouteValuesOverrideBody()
     {
         var context = new TestBindingContext(
@@ -59,7 +58,7 @@ public sealed class MixedSourceBinderTests
         values.Value<string>("routeVal").Should().Be(TestBindingContext.VAL_FROM_ROUTE);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BodyValuesOnly()
     {
         var context = new TestBindingContext(
@@ -74,7 +73,7 @@ public sealed class MixedSourceBinderTests
         values.Value<string>("bodyVal").Should().Be(TestBindingContext.VAL_FROM_BODY);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RouteValuesOnly()
     {
         var context = new TestBindingContext(
@@ -89,3 +88,4 @@ public sealed class MixedSourceBinderTests
         values.Value<string>("routeVal").Should().Be(TestBindingContext.VAL_FROM_ROUTE);
     }
 }
+

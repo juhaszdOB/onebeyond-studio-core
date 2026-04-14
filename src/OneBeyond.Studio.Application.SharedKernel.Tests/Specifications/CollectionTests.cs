@@ -1,14 +1,13 @@
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.Specifications;
+using Xunit;
 
 namespace OneBeyond.Studio.Application.SharedKernel.Tests.Specifications;
 
-[TestClass]
+
 public sealed class CollectionTests
 {
-    [TestMethod]
+    [Fact]
     public void TestIncludesCompileWithCollections()
     {
         var includes = new Includes<SomeClass>();
@@ -43,3 +42,4 @@ public sealed class CollectionTests
         testIncludes = includes.Replay(testIncludes);
     }
 }
+

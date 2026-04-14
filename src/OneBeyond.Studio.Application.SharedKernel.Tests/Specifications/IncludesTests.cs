@@ -1,16 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Application.SharedKernel.Specifications;
+using Xunit;
 
 namespace OneBeyond.Studio.Application.SharedKernel.Tests.Specifications;
 
-[TestClass]
+
 public sealed class IncludesTests
 {
-    [TestMethod]
+    [Fact]
     public void TestIncludesWithWhere()
     {
         var includeList = new List<(Expression, IList<Expression>)>();
@@ -30,36 +27,38 @@ public sealed class IncludesTests
                 .ThenInclude(includeAnotherProperty2)
                 .Where(filterYetAnotherProperty1);
 
-        Assert.HasCount(4, includeList);
+        Assert.Equal(4, includeList.Count());
 
         var some4 = includeList.Single((include) => include.Item1.Equals(includeSomeProperty4));
 
-        Assert.HasCount(1, some4.Item2);
-        Assert.AreEqual(filterAnotherProperty1, some4.Item2[0]);
+        Assert.Single(some4.Item2);
+        Assert.Equal(filterAnotherProperty1, some4.Item2[0]);
 
         var some3 = includeList.Single((include) => include.Item1.Equals(includeSomeProperty3));
 
-        Assert.IsEmpty(some3.Item2);
+        Assert.Empty(some3.Item2);
 
         var another2 = includeList.Single((include) => include.Item1.Equals(includeAnotherProperty2));
 
-        Assert.HasCount(1, another2.Item2);
-        Assert.AreEqual(filterYetAnotherProperty1, another2.Item2[0]);
+        Assert.Single(another2.Item2);
+        Assert.Equal(filterYetAnotherProperty1, another2.Item2[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void HaveCartesionExplosion_Propagation_Down_To_Resulting_Instance()
     {
         var includes = new Includes<SomeClass>(haveCartesianExplosion: true)
             .Include((some) => some.SomeProperty4)
                 .ThenInclude((another) => another.AnotherProperty2);
 
-        Assert.IsTrue(includes.HaveCartesianExplosion);
+        Assert.True(includes.HaveCartesianExplosion);
 
         includes = new Includes<SomeClass>(haveCartesianExplosion: false)
             .Include((some) => some.SomeProperty4)
                 .ThenInclude((another) => another.AnotherProperty2);
 
-        Assert.IsFalse(includes.HaveCartesianExplosion);
+        Assert.False(includes.HaveCartesianExplosion);
     }
 }
+
+

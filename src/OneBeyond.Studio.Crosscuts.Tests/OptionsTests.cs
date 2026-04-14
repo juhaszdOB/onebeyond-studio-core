@@ -1,16 +1,17 @@
 using Autofac;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Crosscuts.Exceptions;
 using OneBeyond.Studio.Crosscuts.Options;
+using Xunit;
 
 namespace OneBeyond.Studio.Crosscuts.Tests;
 
-[TestClass]
+
 public sealed class OptionsTests : TestsBase
 {
-    [TestMethod]    
+
+    [Fact]    
     public void TestOptionsExceptionThrownWhenSectionNotFound()
     {
         var configuration = ServiceProvider.GetRequiredService<IConfiguration>();
@@ -18,22 +19,22 @@ public sealed class OptionsTests : TestsBase
         Assert.Throws<OptionsException>(() => configuration.GetOptions<OptionsTestsOptions>("OptionsTestsNonExisting"));        
     }
 
-    [TestMethod]    
+    [Fact]    
     public void TestOptionsExceptionThrownWhenSectionEmpty()
     {
         var configuration = ServiceProvider.GetRequiredService<IConfiguration>();
         
-        Assert.Throws<OptionsException>(() => configuration.GetOptions<OptionsTestsOptions>("OptionsTests:Empty\""));
+        Assert.Throws<OptionsException>(() => configuration.GetOptions<OptionsTestsOptions>("OptionsTests:Empty"));
     }
 
-    [TestMethod]
+    [Fact]
     public void TestOptionsDataCanBeMappedToPrivateSetter()
     {
         var configuration = ServiceProvider.GetRequiredService<IConfiguration>();
 
         var someApiOptions = configuration.GetOptions<OptionsTestsOptions>("OptionsTests");
 
-        Assert.AreEqual("Private Setter", someApiOptions.SecretKey);
+        Assert.Equal("Private Setter", someApiOptions.SecretKey);
     }
 
     protected override void ConfigureTestServices(
@@ -53,3 +54,4 @@ public sealed class OptionsTests : TestsBase
         public string? SecretKey { get; private set; }
     }
 }
+

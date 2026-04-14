@@ -1,18 +1,17 @@
-using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using OneBeyond.Studio.Hosting.AspNet.ModelBinders.MixedSource;
 using OneBeyond.Studio.Hosting.AspNet.ModelBinders.MixedSource.Converters;
 using OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.BindingContext;
 using OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.BindingContext.BindingModels;
+using Xunit;
 
 namespace OneBeyond.Studio.Hosting.AspNet.Tests.ModelBinders.MixedSource.Converters;
 
-[TestClass]
+
 public sealed class FromRouteConverterTests
 {
-    [TestMethod]
+    [Fact]
     public async Task BindRouteModelPropertiesOnly()
     {
         //route: id: '', routeVal: ''
@@ -31,7 +30,7 @@ public sealed class FromRouteConverterTests
         values.Value<string>("routeVal").Should().Be(TestBindingContext.VAL_FROM_ROUTE);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BindBodyModelPropertiesOnly()
     {
         //route: id: '', routeVal: ''
@@ -49,7 +48,7 @@ public sealed class FromRouteConverterTests
         values.Value<string>("id").Should().Be(TestBindingContext.ID_FROM_ROUTE);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BindEmptyBody()
     {
         const string testRequestBody = "";
@@ -66,7 +65,7 @@ public sealed class FromRouteConverterTests
         values.Count.Should().Be(0);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BindEmptyStringBody()
     {
         const string testRequestBody = "\"\"";
@@ -85,3 +84,4 @@ public sealed class FromRouteConverterTests
         value.Value<string>().Should().Be(expectedResult);
     }
 }
+

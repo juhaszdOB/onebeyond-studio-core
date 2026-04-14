@@ -1,18 +1,14 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofac;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OneBeyond.Studio.Crosscuts.Strings;
 using OneBeyond.Studio.Infrastructure.Azure.Exceptions;
 using OneBeyond.Studio.Infrastructure.Azure.MessageQueues;
 using OneBeyond.Studio.Infrastructure.Azure.MessageQueues.Options;
+using Xunit;
 
 namespace OneBeyond.Studio.Infrastructure.Azure.Tests.MessageQueues;
 
-[TestClass]
 public sealed class ServiceBusMessageQueueTests : TestsBase
 {
     private readonly string _connectionString;
@@ -23,7 +19,7 @@ public sealed class ServiceBusMessageQueueTests : TestsBase
         _connectionString = ""; // Please provide your own connection string
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Publishing_Sessioned_Message()
     {
         if (_connectionString.IsNullOrEmpty())
@@ -37,11 +33,11 @@ public sealed class ServiceBusMessageQueueTests : TestsBase
             var message = new Message(sessionId, "Hello World");
 
             await messageQueue.PublishAsync(message, CancellationToken.None);
-            Assert.IsTrue(true, "For shutting up Sonar Cloud");
+            Assert.True(true, "For shutting up Sonar Cloud");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Publishing_Ordinary_Message()
     {
         if (_connectionString.IsNullOrEmpty())
@@ -55,11 +51,11 @@ public sealed class ServiceBusMessageQueueTests : TestsBase
             var message = new Message(sessionId, "Hello World");
 
             await messageQueue.PublishAsync(message, CancellationToken.None);
-            Assert.IsTrue(true, "For shutting up Sonar Cloud");
+            Assert.True(true, "For shutting up Sonar Cloud");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Throwing_When_Existing_Queue_With_Sessions_Accessed_Without_SessionId_In_Options()
     {
         if (_connectionString.IsNullOrEmpty())
@@ -82,7 +78,7 @@ public sealed class ServiceBusMessageQueueTests : TestsBase
             try
             {
                 await messageQueue.PublishAsync(message, CancellationToken.None);
-                Assert.Fail();
+                Assert.Fail("Expected AzureInfrastructureException was not thrown");
             }
             catch (AzureInfrastructureException)
             {
